@@ -111,3 +111,101 @@ for(int i = 0; i < myArray.Length + y; i++)
 
 Use **AddRange** to add a whole collection, rather than adding each item in the collection iteratively. Nearly all windows controls and collections have both Add and AddRange methods, and each is optimized for a different purpose. Add is useful for adding a single item, whereas AddRange has some extra overhead but wins out when adding multiple items.
 
+
+# High performance patterns
+
+[https://prodotnetmemory.com/slides/performancepatternslong](https://prodotnetmemory.com/slides/performancepatternslong/#1)
+
+## Frugal object
+
+Represents zero, one or many strings in an efficient way. Saves memory footprint and traffic for lists with single element: doesn't allocate real list until number of elements is more then 1.
+
+```csharp
+public struct CompactList<T> : IEnumerable<T>
+{
+   private T singleValue;
+   private List<T> multipleValues;
+   ...
+}
+
+```
+
+## Struct of Arrays
+
+Processing a lot of data is not efficient due to the memory access time. Design data structures and processing steps to leverage data locality and sequential access. Most typically, in the form of plain arrays of data.
+
+Array of Structs
+
+```csharp
+class CustomerClassRepository
+{
+  List<Customer> customers = new List<Customer>();
+  public void UpdateScorings()
+  {
+    foreach (var customer in customers)
+      customer.UpdateScoring();
+  }
+}
+public class CustomerClass
+{
+  private double Earnings;
+  private DateTime DateOfBirth;
+  private bool IsSmoking;
+  private double Scoring;
+  private HealthData Health;
+  private AuxiliaryData Auxiliary;
+  private Company Employer;
+  public void UpdateScoring()
+  {
+    Scoring = Earnings * (IsSmoking ? 0.8 : 1.0) * ProcessAge(DateOfBirth);
+  }
+  private double ProcessAge(DateTime dateOfBirth) => ...;
+}
+```
+
+Instead use Struct of Arrays
+
+```csharp
+class CustomerRepositoryDOD
+{
+  int NumberOfCustomers;
+  double[] Scoring;
+  double[] Earnings;
+  bool[] IsSmoking;
+  int[] YearOfBirth;
+  DateTime[] DateOfBirth;
+  public void UpdateScorings()
+  {
+     for (int i = 0; i < NumberOfCustomers; ++i)
+        Scoring[i] = Earnings[i] * (IsSmoking[i] ? 0.8 : 1.0) 
+                     * ProcessAge(YearOfBirth[i]);
+  }
+  public double ProcessAge(int yearOfBirth) => ...;
+}
+```
+
+## Fit the cache line
+
+```csharp
+class Program
+{
+  // NuGet - ObjectLayoutInspector
+  static void Main(string[] args)
+  {
+     TypeLayout layout = ObjectLayoutInspector.TypeLayout.GetLayout<CustomerValue>();
+     System.Diagnostics.Debug.WriteLine(layout.ToString(true));
+  }
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct CustomerValue
+  {
+    double Earnings;
+    double Scoring;
+    int YearOfBirth;
+    bool IsSmoking;
+    int HealthDataId;
+    int AuxiliaryDataId;
+    int EmployerId;
+  }
+}
+```
