@@ -15,7 +15,7 @@ More allocations mean more garbage collection and garbage collection introduce p
 
 ```csharp
 int capacity = 1000;
-var newList = new List<...>(listCapacity);
+var newList = new List<...>(capacity);
 ```
 
 ## Prefer StringBuilder for string concatenation
