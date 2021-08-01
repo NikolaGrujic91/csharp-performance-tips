@@ -211,3 +211,154 @@ class Program
   }
 }
 ```
+
+# Ref - Managed pointer(byref)
+
+Managed pointer is:
+1. Strongly typed (i.e. System.Int32& or SomeType&)
+2. It can point to:
+    * local variable
+    * method's argument
+    * object's field
+    * array's element
+3. It can live as:
+    * local variable
+    * method's argument
+    * method's return value
+4. It can not live in the Managed Heap.
+
+Ref is generally used on the lower level implementations.
+
+## Ref parameters
+
+Passing an argument by reference:
+
+```csharp
+private static void Helper(ref SomeType data)
+{
+  data.Field = 11;
+}
+```
+
+Passing a reference type by reference enables the called method to replace the object to which the reference parameter refers in the caller. The storage location of the object is passed to the method as the value of the reference parameter. If you change the value in the storage location of the parameter (to point to a new object), you also change the storage location to which the caller refers. [Microsoft docs.](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/ref#passing-an-argument-by-reference-an-example)
+
+```csharp
+class Product
+{
+  public Product(string name, int newID)
+  {
+      ItemName = name;
+      ItemID = newID;
+  }
+
+  public string ItemName { get; set; }
+  public int ItemID { get; set; }
+}
+
+private static void ChangeByReference(ref Product itemRef)
+{
+  // Change the address that is stored in the itemRef parameter.
+  itemRef = new Product("Stapler", 99999);
+
+  // You can change the value of one of the properties of
+  // itemRef. The change happens to item in Main as well.
+  itemRef.ItemID = 12345;
+}
+
+private static void ModifyProductsByReference()
+{
+  // Declare an instance of Product and display its initial values.
+  Product item = new Product("Fasteners", 54321);
+  System.Console.WriteLine("Original values in Main.  Name: {0}, ID: {1}\n",
+      item.ItemName, item.ItemID);
+
+  // Pass the product instance to ChangeByReference.
+  ChangeByReference(ref item);
+  System.Console.WriteLine("Back in Main.  Name: {0}, ID: {1}\n",
+      item.ItemName, item.ItemID);
+}
+
+// This method displays the following output:
+// Original values in Main.  Name: Fasteners, ID: 54321
+// Back in Main.  Name: Stapler, ID: 12345
+```
+
+
+## Ref locals
+
+Local variable storing managed pointer:
+
+```csharp
+private static void Helper(ref SomeType data)
+{
+  ref SomeType refSomeType = ref data;
+  ref int refData = ref data.Field3;
+}
+```
+
+## Ref return
+
+The return value must have a lifetime that extends beyond the execution of the method. In other words, it can not be a local variable in the method that returns it. It can be an instance or static field of a class or it can be an argument passed to the method.
+
+Bad:
+```csharp
+private static ref int ReturnByRefValueTypeLocal(int index)
+{
+  int localInt = 10;
+  return ref localInt; // Compilation error: Cannot return local 'localInt' by
+                       // reference because it is not a ref local
+}
+```
+
+Good:
+```csharp
+private static ref int ReturnArrayElementByRef(int[] array, int index)
+{
+  return ref array[index]; // Good because lifetime of the array is longer than lifetime of the function
+}
+```
+
+## Readonly ref variables
+
+1. It disallows changing a value stored in the managed pointer:
+    * for reference-type it is a reference
+    * for value-type it is the value itself
+2. Two forms in C#:
+    * ref readonly - for return values and local variables
+    * in - for method parameters
+
+```csharp
+private static ref readonly int ReturnArrayElementByRefReadonly(int[] array, int index)
+{
+  return ref array[index]; 
+}
+```
+
+```csharp
+private static ref int ReturnArrayElementByRef(in int[] array, int index)   // array is readonly
+{
+  return ref array[index];
+}
+```
+
+## Readonly struct
+
+1. Non mutable struct - it can not be modified after creation
+2. Limitations:
+    * all fields must be readonly
+    * initializing constructor is required
+3. Compiler/JIT can treat readonly refs much better. It knows that it does not have to create defensive copies.
+
+```csharp
+public readonly struct ReadonlyValueBook
+{
+  public readonly string Title;
+  public readonly string Author;
+
+  public ReadonlyValueBook(string title, string author)
+  {
+    this.Title = title;
+    this.Author = author;
+  }
+}
+```
