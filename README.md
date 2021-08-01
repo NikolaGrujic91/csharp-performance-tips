@@ -186,6 +186,8 @@ class CustomerRepositoryDOD
 
 ## Fit the cache line
 
+Cache lines or cache blocks have typically fixed size of 64 bytes on x86/x64 CPU. Try to fit struct or class into that size to minimize cache misses. ObjectLayoutInspector is a tool that can help with displaying layout of the struct or class.
+
 ```csharp
 class Program
 {
