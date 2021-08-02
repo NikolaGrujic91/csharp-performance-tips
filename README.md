@@ -111,6 +111,16 @@ for(int i = 0; i < myArray.Length + y; i++)
 
 Use **AddRange** to add a whole collection, rather than adding each item in the collection iteratively. Nearly all windows controls and collections have both Add and AddRange methods, and each is optimized for a different purpose. Add is useful for adding a single item, whereas AddRange has some extra overhead but wins out when adding multiple items.
 
+## When to use Structs
+
+In most cases, you will want to use classes. Use structs when all of the following is true [full guidelines from Microsoft](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/choosing-between-class-and-struct):
+
+ * The struct size is less than or equals to 16 bytes (e.g 4 integers). More than that size, classes are more effective than structs.
+ * The struct is short lived
+ * The struct is immutable.
+ * The struct will not have to be boxed frequently.
+
+In addition, structs are passing by value. So when you’re passing a struct as a method parameter, it will be copied entirely. Copying is expansive and can hurt performance instead of improving it.
 
 # High performance patterns
 
