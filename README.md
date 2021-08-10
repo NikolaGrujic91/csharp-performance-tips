@@ -372,3 +372,38 @@ public readonly struct ReadonlyValueBook
   }
 }
 ```
+
+# False sharing 
+
+C# semantics are different from hardware access semantics.
+Prefer immutable or local data. 
+
+```csharp
+double[] result_per_thread; 
+
+public double LocalStorage
+{
+  double result = 0; 
+
+  Parallel.For(0, threads, index => 
+  {
+    var local = 0d;
+    var start = index * data.Length / threads;
+    var stop = (index + 1) * data.Length / threads;
+    
+    for (var i = start; i < stop; i++)
+    {
+      local += Math.Sqrt(data[i]);
+    } 
+
+    result_per_thread[index] = local;
+  }); 
+
+  for (var i = 0; i < result_per_thread.Length; i++)
+  {
+    result += result_per_thread[i];
+  } 
+
+  return result;
+}
+```
